@@ -11,7 +11,9 @@ import (
 	"strings"
 )
 
-func unique(arr []string) (ans []string) {
+var Version string = "0.1.3"
+
+func Unique(arr []string) (ans []string) {
 	if len(arr) == 0 {
 		return ans
 	}
@@ -25,7 +27,7 @@ func unique(arr []string) (ans []string) {
 	return ans
 }
 
-func readFile(filename string) (lines []string) {
+func ReadFile(filename string) (lines []string) {
 	file, _ := os.ReadFile(filename)
 
 	datareader := bufio.NewScanner(strings.NewReader(string(file)))
@@ -35,7 +37,7 @@ func readFile(filename string) (lines []string) {
 	return lines
 }
 
-func writeFile(filename string, lines []string) {
+func WriteFile(filename string, lines []string) {
 	file, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 755)
 	datawriter := bufio.NewWriter(file)
 	for _, data := range lines {
@@ -45,7 +47,7 @@ func writeFile(filename string, lines []string) {
 	file.Close()
 }
 
-func httpClient(proxy string) (client *http.Client) {
+func CreateHttpClient(proxy string) (client *http.Client) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -61,7 +63,7 @@ func httpClient(proxy string) (client *http.Client) {
 	return client
 }
 
-func httpRequest(client *http.Client, method string, url string, data io.Reader, headers map[string]string) []byte {
+func HttpRequest(client *http.Client, method string, url string, data io.Reader, headers map[string]string) []byte {
 	request, _ := http.NewRequest(method, url, data)
 	for key, value := range headers {
 		request.Header.Set(key, value)
