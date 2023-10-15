@@ -1,4 +1,4 @@
-package utils
+package goutils
 
 import (
 	"bufio"
@@ -28,15 +28,15 @@ func unique(arr []string) (ans []string) {
 func readFile(filename string) (lines []string) {
 	file, _ := os.ReadFile(filename)
 
-	sc := bufio.NewScanner(strings.NewReader(string(file)))
-	for sc.Scan() {
-		lines = append(lines, sc.Text())
+	datareader := bufio.NewScanner(strings.NewReader(string(file)))
+	for datareader.Scan() {
+		lines = append(lines, datareader.Text())
 	}
 	return lines
 }
 
 func writeFile(filename string, lines []string) {
-	file, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	file, _ := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 755)
 	datawriter := bufio.NewWriter(file)
 	for _, data := range lines {
 		_, _ = datawriter.WriteString(data + "\n")
@@ -45,26 +45,23 @@ func writeFile(filename string, lines []string) {
 	file.Close()
 }
 
-func create_http_client(proxy string) (client *http.Client) {
+func httpClient(proxy string) (client *http.Client) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-
 	if proxy != "" {
-		var proxyUrl, _ = url.Parse("http://127.0.0.1:8080")
+		var proxyUrl, _ = url.Parse(proxy)
 		tr.Proxy = http.ProxyURL(proxyUrl)
 	}
-
 	jar, _ := cookiejar.New(nil)
 	client = &http.Client{
 		Transport: tr,
 		Jar:       jar,
 	}
-
 	return client
 }
 
-func http_request_wrapper(client *http.Client, method string, url string, data io.Reader, headers map[string]string) []byte {
+func httpRequest(client *http.Client, method string, url string, data io.Reader, headers map[string]string) []byte {
 	request, _ := http.NewRequest(method, url, data)
 	for key, value := range headers {
 		request.Header.Set(key, value)
