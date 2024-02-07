@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var Version string = "0.1.3"
+var Version string = "0.1.4"
 
 func check(err error) {
 	if err != nil {
