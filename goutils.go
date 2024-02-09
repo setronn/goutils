@@ -85,7 +85,7 @@ func HttpRequestWrapper(client *http.Client, method string, url string, data str
 
 	for _, header := range headers {
 		arr := strings.Split(header, ":")
-		request.Header.Set(arr[0], arr[1]) // There is an additional space after :
+		request.Header.Set(arr[0], arr[1])
 	}
 
 	response, err := client.Do(request)
