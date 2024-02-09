@@ -4,18 +4,20 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 )
 
-var Version string = "0.1.4"
+var Version string = "0.2.0"
 
-func check(err error) {
+func Check(err error) {
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +61,7 @@ func WriteFile(filename string, lines []string) {
 	file.Close()
 }
 
-func CreateHttpClient(proxy string) (client *http.Client) {
+func CreateHttpClientWrapper(proxy string) (client *http.Client) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -75,18 +77,62 @@ func CreateHttpClient(proxy string) (client *http.Client) {
 	return client
 }
 
-func HttpRequestWrapper(client *http.Client, method string, url string, data string, headers []string) (respLine string, respCode int) {
-	request, _ := http.NewRequest(method, url, bytes.NewBuffer([]byte(data)))
+func HttpRequestWrapper(client *http.Client, method string, url string, data string, headers []string) (respLine []byte, respCode int, err error) {
+	request, err := http.NewRequest(method, url, bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		return nil, 0, err
+	}
+
 	for _, header := range headers {
 		arr := strings.Split(header, ":")
 		request.Header.Set(arr[0], arr[1]) // There is an additional space after :
 	}
+
 	response, err := client.Do(request)
-	check(err)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	respBytes, err := io.ReadAll(response.Body)
-	check(err)
-	response.Body.Close()
+	if err != nil {
+		return nil, 0, err
+	}
+
 	respCode = response.StatusCode
-	respLine = string(respBytes[:])
-	return respLine, respCode
+	return respBytes, respCode, err
+}
+
+func ExecuteShellScript(scriptString string, args ...string) error {
+	shellArgs := []string{"-s", "-"}
+	shellArgs = append(shellArgs, args...)
+
+	cmd := exec.Command("sh", shellArgs...)
+	cmd.Stdin = strings.NewReader(scriptString)
+
+	var stdBuffer bytes.Buffer
+	mw := io.MultiWriter(os.Stdout, &stdBuffer)
+	cmd.Stdout = mw
+	cmd.Stderr = mw
+
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+var lastPrintrStrLen int = 0
+
+func Printr1(str string) {
+	if str[len(str)-1:] == "\r" {
+		str = str[:len(str)-1]
+	}
+	lastPrintrStrLen = len(str)
+	fmt.Print(str)
+}
+
+func Printr2(str string) {
+	fmt.Print("\r" + strings.Repeat(" ", lastPrintrStrLen) + "\r")
+	fmt.Print(str)
 }
