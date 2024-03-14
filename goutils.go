@@ -3,12 +3,8 @@ package goutils
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
 	"fmt"
 	"io"
-	"net/http"
-	"net/http/cookiejar"
-	"net/url"
 	"os"
 	"os/exec"
 	"sort"
@@ -61,47 +57,7 @@ func WriteFile(filename string, lines []string) {
 	file.Close()
 }
 
-func CreateHttpClientWrapper(proxy string) (client *http.Client) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	if proxy != "" {
-		var proxyUrl, _ = url.Parse(proxy)
-		tr.Proxy = http.ProxyURL(proxyUrl)
-	}
-	jar, _ := cookiejar.New(nil)
-	client = &http.Client{
-		Transport: tr,
-		Jar:       jar,
-	}
-	return client
-}
-
-func HttpRequestWrapper(client *http.Client, method string, url string, data string, headers []string) (respLine []byte, respCode int, err error) {
-	request, err := http.NewRequest(method, url, bytes.NewBuffer([]byte(data)))
-	if err != nil {
-		return nil, 0, err
-	}
-
-	for _, header := range headers {
-		arr := strings.Split(header, ":")
-		request.Header.Set(arr[0], arr[1])
-	}
-
-	response, err := client.Do(request)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	respBytes, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	respCode = response.StatusCode
-	return respBytes, respCode, err
-}
-
+// [TODO] Fix: doesn't return error if shell returns with code 2 (error)
 func ExecuteShellScript(scriptString string, args ...string) error {
 	shellArgs := []string{"-s", "-"}
 	shellArgs = append(shellArgs, args...)
@@ -120,6 +76,30 @@ func ExecuteShellScript(scriptString string, args ...string) error {
 	}
 
 	return nil
+}
+
+func ReadBinFile(filename string) ([]byte, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	stats, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	var size int64 = stats.Size()
+	bytes := make([]byte, size)
+
+	bufr := bufio.NewReader(file)
+	_, err = bufr.Read(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
 
 var lastPrintrStrLen int = 0
